@@ -57,12 +57,18 @@ else
 fi
 
 if [ "${1:-}" = "--install" ]; then
-    echo "==> Installing into /Applications"
+    # ~/Applications needs no admin rights and is a first-class location for
+    # Launch Services. Override with KLIP_INSTALL_DIR=/Applications if you
+    # would rather install for every user on the machine.
+    INSTALL_DIR="${KLIP_INSTALL_DIR:-$HOME/Applications}"
+    TARGET="${INSTALL_DIR}/${APP_NAME}.app"
+    echo "==> Installing into ${INSTALL_DIR}"
+    mkdir -p "$INSTALL_DIR"
     pkill -x "$APP_NAME" 2>/dev/null || true
-    rm -rf "/Applications/${APP_NAME}.app"
-    cp -R "$APP" "/Applications/${APP_NAME}.app"
-    open "/Applications/${APP_NAME}.app"
-    echo "Done: /Applications/${APP_NAME}.app launched."
+    rm -rf "$TARGET"
+    cp -R "$APP" "$TARGET"
+    open "$TARGET"
+    echo "Done: ${TARGET} launched."
 else
     echo "Done: $(pwd)/$APP"
     echo "Run:     open \"$(pwd)/$APP\""

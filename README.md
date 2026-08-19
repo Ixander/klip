@@ -32,10 +32,19 @@ Swift toolchain (`xcode-select --install`); full Xcode is not required.
 ```bash
 git clone https://github.com/Ixander/klip.git
 cd klip
-./build.sh --install   # builds, copies to /Applications and launches
+./build.sh --install   # builds, copies to ~/Applications and launches
 ```
 
-Without `--install` the bundle is left at `build/Klip.app`.
+`~/Applications` needs no admin rights and Launch Services treats it as a
+first-class location. To install for every user on the machine instead:
+
+```bash
+KLIP_INSTALL_DIR=/Applications ./build.sh --install
+```
+
+Without `--install` the bundle is left at `build/Klip.app`. Running it from
+there works, but keep the installed copy for daily use — launch at login points
+at wherever the app lives, and the build folder gets rewritten on every build.
 
 The icon can be regenerated with
 `swift Tools/makeicon.swift && iconutil -c icns Resources/AppIcon.iconset -o Resources/AppIcon.icns`

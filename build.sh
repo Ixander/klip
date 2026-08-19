@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 
 APP_NAME="Klip"
 BUNDLE_ID="io.github.ixander.klip"
-VERSION="0.1.0"
+VERSION="0.2.0"
 BUILD_DIR=".build/release"
 APP="build/${APP_NAME}.app"
 

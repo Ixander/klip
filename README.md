@@ -18,6 +18,7 @@ Swift + SwiftUI with no dependencies. Inspired by
 - Skips "confidential" clipboards (`org.nspasteboard.ConcealedType` and
   friends), so passwords from password managers never reach the history
 - Launch at login (SMAppService)
+- Update check against GitHub Releases every 48 hours — see below
 - History lives in `~/Library/Application Support/Klip/`
 
 ## Installation
@@ -35,6 +36,24 @@ Without `--install` the bundle is left at `build/Klip.app`.
 
 The icon can be regenerated with
 `swift Tools/makeicon.swift && iconutil -c icns Resources/AppIcon.iconset -o Resources/AppIcon.icns`
+
+## Updates
+
+Klip has no self-updater. Every 48 hours it asks the GitHub Releases API
+whether a newer version exists and, if so, adds an **Update available → x.y.z**
+item to the status bar menu that opens the release page. Nothing is downloaded
+and nothing is replaced, which is what keeps the app free of the code-signing
+requirements a real self-updater would carry.
+
+Updating is manual:
+
+```bash
+cd klip && git pull && ./build.sh --install
+```
+
+The check can be turned off in Settings → Updates, where you can also trigger
+it on demand. The only thing sent is a plain unauthenticated GET to
+`api.github.com`; no identifiers, no clipboard data.
 
 ## Keyboard shortcuts in the history panel
 
@@ -125,6 +144,7 @@ The certificate stays on your machine and never enters the repository. Giving
 | `HistoryView.swift` | SwiftUI list interface |
 | `HotKey.swift` | global hot key via Carbon |
 | `Paster.swift` | ⌘V emulation via CGEvent, Accessibility check |
+| `UpdateChecker.swift` | GitHub Releases version check, no downloading |
 | `SettingsView.swift`, `HotKeyRecorderView.swift` | settings, shortcut recorder |
 
 ## License

@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var store: HistoryStore!
     private var monitor: ClipboardMonitor!
     private var panel: HistoryPanelController!
+    private var updates: UpdateChecker!
     private var statusItem: NSStatusItem!
     private var settingsWindow: NSWindow?
     private var hotKeyFailed = false
@@ -39,6 +40,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         registerHotKey()
 
         setupStatusItem()
+
+        updates = UpdateChecker(settings: settings)
+        updates.onUpdateFound = { [weak self] in self?.rebuildMenu() }
+        updates.start()
+
         Log.write("app: launched, hotkey=\(settings.hotKeyDescription), history=\(store.items.count)")
 
         // For manual testing: KLIP_SHOW_ON_LAUNCH=1 open -a Klip
@@ -50,6 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         store.save()
         monitor.stop()
+        updates.stop()
         HotKeyCenter.shared.unregister()
     }
 
@@ -81,6 +88,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func rebuildMenu() {
         guard let menu = statusItem?.menu else { return }
         menu.removeAllItems()
+
+        if let update = updates?.available {
+            let item = NSMenuItem(title: "Update available → \(update.version)",
+                                  action: #selector(openReleasePage), keyEquivalent: "")
+            item.target = self
+            item.image = NSImage(systemSymbolName: "arrow.down.circle", accessibilityDescription: nil)
+            menu.addItem(item)
+            menu.addItem(.separator())
+        }
 
         let items = Array(store.ordered.prefix(menuHistoryLimit))
         if items.isEmpty {
@@ -175,13 +191,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         store.clear(keepPinned: true)
     }
 
+    @objc private func openReleasePage() {
+        guard let url = updates?.available?.url else { return }
+        NSWorkspace.shared.open(url)
+    }
+
     @objc func openSettings() {
         if let settingsWindow {
             NSApp.activate(ignoringOtherApps: true)
             settingsWindow.makeKeyAndOrderFront(nil)
             return
         }
-        let view = SettingsView(settings: settings, store: store) { [weak self] in
+        let view = SettingsView(settings: settings, store: store, updates: updates) { [weak self] in
             self?.registerHotKey()
         }
         let window = NSWindow(

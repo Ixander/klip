@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var store: HistoryStore
+    @ObservedObject var updates: UpdateChecker
     var onHotKeyChange: () -> Void
 
     @State private var accessibilityGranted = Paster.isTrusted
@@ -27,6 +28,24 @@ struct SettingsView: View {
                     get: { settings.launchAtLogin },
                     set: { settings.launchAtLogin = $0 }
                 ))
+            }
+
+            Section("Updates") {
+                Toggle("Check GitHub for new versions", isOn: $settings.checkForUpdates)
+                HStack {
+                    if let update = updates.available {
+                        Text("Version \(update.version) is available.")
+                            .font(.callout)
+                        Spacer()
+                        Button("Open release page") { NSWorkspace.shared.open(update.url) }
+                    } else {
+                        Text("Version \(updates.currentVersion) — the latest one known.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Check now") { updates.checkNow() }
+                    }
+                }
             }
 
             Section("Access") {

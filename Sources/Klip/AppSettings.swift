@@ -22,6 +22,10 @@ final class AppSettings: ObservableObject {
     @Published var ignoredApps: [String] {
         didSet { defaults.set(ignoredApps, forKey: Keys.ignoredApps) }
     }
+    /// Ask GitHub Releases about newer versions (every 48 hours).
+    @Published var checkForUpdates: Bool {
+        didSet { defaults.set(checkForUpdates, forKey: Keys.checkForUpdates) }
+    }
 
     private enum Keys {
         static let maxItems = "maxItems"
@@ -29,6 +33,7 @@ final class AppSettings: ObservableObject {
         static let hotKeyCode = "hotKeyCode"
         static let hotKeyModifiers = "hotKeyModifiers"
         static let ignoredApps = "ignoredApps"
+        static let checkForUpdates = "checkForUpdates"
     }
 
     init() {
@@ -38,12 +43,14 @@ final class AppSettings: ObservableObject {
             Keys.hotKeyCode: Int(kVK_ANSI_V),
             Keys.hotKeyModifiers: Int(cmdKey | shiftKey),
             Keys.ignoredApps: [] as [String],
+            Keys.checkForUpdates: true,
         ])
         maxItems = defaults.integer(forKey: Keys.maxItems)
         pasteAutomatically = defaults.bool(forKey: Keys.pasteAutomatically)
         hotKeyCode = UInt32(defaults.integer(forKey: Keys.hotKeyCode))
         hotKeyModifiers = UInt32(defaults.integer(forKey: Keys.hotKeyModifiers))
         ignoredApps = defaults.stringArray(forKey: Keys.ignoredApps) ?? []
+        checkForUpdates = defaults.bool(forKey: Keys.checkForUpdates)
     }
 
     var hotKeyDescription: String {

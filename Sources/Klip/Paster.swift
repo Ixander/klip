@@ -14,8 +14,8 @@ struct PasteBehavior: Equatable, CustomStringConvertible {
         (sendsPaste ? "paste" : "copyOnly") + (stripsFormatting ? "+plain" : "")
     }
 
-    /// Held modifiers win over the configured default, the way Maccy does it:
-    /// ⌘ copies, ⌥ copies and pastes, ⌥⇧ copies, clears formatting and pastes.
+    /// Held modifiers win over the configured default: ⌘ copies, ⌥ copies and
+    /// pastes, ⌥⇧ copies, clears formatting and pastes.
     @MainActor
     static func resolve(modifiers: NSEvent.ModifierFlags, settings: AppSettings) -> PasteBehavior {
         let held = modifiers.intersection(.deviceIndependentFlagsMask)

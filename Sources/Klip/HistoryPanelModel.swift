@@ -99,7 +99,7 @@ final class HistoryPanelModel: ObservableObject {
             break
         }
 
-        // ⌥P toggles the pin, the way Maccy does it.
+        // ⌥P toggles the pin as well, next to ⌘P.
         if flags.contains(.option), code == kVK_ANSI_P {
             togglePinSelection()
             return true

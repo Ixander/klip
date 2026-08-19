@@ -2,8 +2,7 @@
 
 A lightweight menu bar app: it keeps your copy history, gives you fast search,
 and pastes the selected entry into the app you were just using. Written in
-Swift + SwiftUI with no dependencies. Inspired by
-[Maccy](https://github.com/p0deje/Maccy); the code is original.
+Swift + SwiftUI with no dependencies.
 
 ## Features
 
@@ -13,7 +12,7 @@ Swift + SwiftUI with no dependencies. Inspired by
 - Global hot key **⌘⇧V** (configurable in Settings)
 - Search: exact match plus fuzzy matching
 - Pin the entries you keep reaching for: each pin gets a permanent letter
-  (⌘A, ⌘S, ⌘D…) that never shifts as the history changes, Maccy style
+  (⌘A, ⌘S, ⌘D…) that never shifts as the history changes
 - Auto-paste via ⌘V into the previous app (needs Accessibility), or copy only
   and paste yourself — see Behavior below
 - Keeps the RTF flavour of a copy, so formatting survives a round trip, and can

@@ -17,7 +17,7 @@ struct ClipItem: Identifiable, Codable, Equatable {
     /// File name inside rich/ holding the RTF flavour of a text entry, if it had one.
     var richTextFile: String?
     var pinned: Bool = false
-    /// Stable letter assigned while pinned, Maccy style. Never shifts with history.
+    /// Stable letter assigned while pinned. Never shifts with history.
     var pinKey: String?
     var copiedAt: Date = Date()
     var appName: String?

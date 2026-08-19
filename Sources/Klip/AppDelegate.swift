@@ -98,23 +98,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(.separator())
         }
 
-        let items = Array(store.ordered.prefix(menuHistoryLimit))
-        if items.isEmpty {
+        let all = store.ordered
+        let pinned = all.filter(\.pinned)
+        let recent = Array(all.filter { !$0.pinned }.prefix(menuHistoryLimit))
+
+        if pinned.isEmpty && recent.isEmpty {
             let empty = NSMenuItem(title: "History is empty", action: nil, keyEquivalent: "")
             empty.isEnabled = false
             menu.addItem(empty)
-        } else {
-            for (index, item) in items.enumerated() {
-                let menuItem = NSMenuItem(title: menuTitle(for: item),
-                                          action: #selector(historyItemPicked(_:)),
-                                          keyEquivalent: index < 9 ? String(index + 1) : "")
-                menuItem.keyEquivalentModifierMask = .command
-                menuItem.target = self
-                menuItem.representedObject = item.id
-                menuItem.image = menuIcon(for: item)
-                if item.pinned { menuItem.state = .on }
-                menu.addItem(menuItem)
-            }
+        }
+
+        // Pinned block: each entry keeps its own letter, so it stays put.
+        for item in pinned {
+            let menuItem = historyMenuItem(for: item, keyEquivalent: item.pinKey ?? "")
+            menuItem.state = .on
+            menu.addItem(menuItem)
+        }
+        if !pinned.isEmpty && !recent.isEmpty { menu.addItem(.separator()) }
+
+        for (index, item) in recent.enumerated() {
+            menu.addItem(historyMenuItem(for: item,
+                                         keyEquivalent: index < 9 ? String(index + 1) : ""))
         }
 
         menu.addItem(.separator())
@@ -137,6 +141,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let quit = NSMenuItem(title: "Quit Klip", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
+    }
+
+    private func historyMenuItem(for item: ClipItem, keyEquivalent: String) -> NSMenuItem {
+        let menuItem = NSMenuItem(title: menuTitle(for: item),
+                                  action: #selector(historyItemPicked(_:)),
+                                  keyEquivalent: keyEquivalent)
+        menuItem.keyEquivalentModifierMask = .command
+        menuItem.target = self
+        menuItem.representedObject = item.id
+        menuItem.image = menuIcon(for: item)
+        return menuItem
     }
 
     private func menuTitle(for item: ClipItem) -> String {

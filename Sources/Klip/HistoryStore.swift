@@ -21,12 +21,21 @@ final class HistoryStore: ObservableObject {
         load()
     }
 
-    /// Pinned first, then by copy time.
+    /// Letters handed out to pinned entries, in this order. "p" is left out
+    /// because ⌘P toggles pinning, "q" because ⌘Q quits.
+    static let pinKeys: [String] = Array("asdfghjkl;wertyuiozxcvbnm").map(String.init)
+
+    /// Pinned first — ordered by their letter so they never move — then the
+    /// rest by copy time.
     var ordered: [ClipItem] {
-        items.sorted { a, b in
-            if a.pinned != b.pinned { return a.pinned }
-            return a.copiedAt > b.copiedAt
-        }
+        let pinned = items.filter(\.pinned).sorted { Self.pinRank($0) < Self.pinRank($1) }
+        let recent = items.filter { !$0.pinned }.sorted { $0.copiedAt > $1.copiedAt }
+        return pinned + recent
+    }
+
+    private static func pinRank(_ item: ClipItem) -> Int {
+        guard let key = item.pinKey, let idx = pinKeys.firstIndex(of: key) else { return .max }
+        return idx
     }
 
     // MARK: - Mutations
@@ -80,8 +89,20 @@ final class HistoryStore: ObservableObject {
 
     func togglePin(_ item: ClipItem) {
         guard let idx = items.firstIndex(where: { $0.id == item.id }) else { return }
-        items[idx].pinned.toggle()
+        if items[idx].pinned {
+            items[idx].pinned = false
+            items[idx].pinKey = nil
+        } else {
+            items[idx].pinned = true
+            items[idx].pinKey = firstFreePinKey()
+        }
         scheduleSave()
+    }
+
+    /// Lowest unused letter, or nil once every letter is taken.
+    private func firstFreePinKey() -> String? {
+        let taken = Set(items.compactMap(\.pinKey))
+        return Self.pinKeys.first { !taken.contains($0) }
     }
 
     func clear(keepPinned: Bool) {
@@ -162,5 +183,16 @@ final class HistoryStore: ObservableObject {
         items = (try? decoder.decode([ClipItem].self, from: data)) ?? []
         // Drop images whose files are gone.
         items.removeAll { $0.kind == .image && !fm.fileExists(atPath: imagesURL.appendingPathComponent($0.imageFile ?? "-").path) }
+        // Entries pinned before pin letters existed still need one. Persist the
+        // assignment, otherwise it is redone (differently) on every launch.
+        var migrated = false
+        for idx in items.indices where items[idx].pinned && items[idx].pinKey == nil {
+            items[idx].pinKey = firstFreePinKey()
+            migrated = true
+        }
+        if migrated {
+            Log.write("store: assigned pin letters to \(items.filter { $0.pinned }.count) pinned entries")
+            scheduleSave()
+        }
     }
 }

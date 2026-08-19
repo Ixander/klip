@@ -6,6 +6,8 @@ import Carbon.HIToolbox
 final class HistoryPanelModel: ObservableObject {
     @Published var query: String = "" { didSet { refresh(resetSelection: true) } }
     @Published private(set) var visible: [ClipItem] = []
+    /// Shortcut hint per row: ⌘<letter> for pinned entries, ⌘1…⌘9 for the rest.
+    @Published private(set) var shortcuts: [UUID: String] = [:]
     @Published var selectedID: UUID?
 
     let store: HistoryStore
@@ -46,9 +48,24 @@ final class HistoryPanelModel: ObservableObject {
                 .sorted { $0.1 > $1.1 }
                 .map(\.0)
         }
+        rebuildShortcuts()
         if resetSelection || selectedID == nil || !visible.contains(where: { $0.id == selectedID }) {
             selectedID = visible.first?.id
         }
+    }
+
+    private func rebuildShortcuts() {
+        var map: [UUID: String] = [:]
+        var rank = 0
+        for item in visible {
+            if item.pinned {
+                if let key = item.pinKey { map[item.id] = "⌘" + key.uppercased() }
+            } else {
+                if rank < 9 { map[item.id] = "⌘\(rank + 1)" }
+                rank += 1
+            }
+        }
+        shortcuts = map
     }
 
     // MARK: - Keyboard
@@ -82,6 +99,12 @@ final class HistoryPanelModel: ObservableObject {
             break
         }
 
+        // ⌥P toggles the pin, the way Maccy does it.
+        if flags.contains(.option), code == kVK_ANSI_P {
+            togglePinSelection()
+            return true
+        }
+
         guard cmd else { return false }
 
         switch code {
@@ -95,13 +118,24 @@ final class HistoryPanelModel: ObservableObject {
             onOpenSettings?()
             return true
         default:
-            guard let digit = Self.digit(for: code) else { return false }
-            let index = digit == 0 ? 9 : digit - 1
-            if index < visible.count {
-                selectedID = visible[index].id
-                confirmSelection()
+            // ⌘1…⌘9 count unpinned entries only, so pins never shift them.
+            if let digit = Self.digit(for: code) {
+                let index = digit == 0 ? 9 : digit - 1
+                let recent = visible.filter { !$0.pinned }
+                if index < recent.count {
+                    selectedID = recent[index].id
+                    confirmSelection()
+                }
+                return true
             }
-            return true
+            // ⌘<letter> picks the pinned entry holding that letter.
+            if let typed = event.charactersIgnoringModifiers?.lowercased(), typed.count == 1,
+               let pin = visible.first(where: { $0.pinned && $0.pinKey == typed }) {
+                selectedID = pin.id
+                confirmSelection()
+                return true
+            }
+            return false
         }
     }
 

@@ -12,7 +12,8 @@ Swift + SwiftUI with no dependencies. Inspired by
   full search panel on ⌘⇧V
 - Global hot key **⌘⇧V** (configurable in Settings)
 - Search: exact match plus fuzzy matching
-- Pin the entries you keep reaching for — they stay on top
+- Pin the entries you keep reaching for: each pin gets a permanent letter
+  (⌘A, ⌘S, ⌘D…) that never shifts as the history changes, Maccy style
 - Auto-paste via ⌘V into the previous app (needs Accessibility)
 - Deduplication: copying something again moves it back to the top
 - Skips "confidential" clipboards (`org.nspasteboard.ConcealedType` and
@@ -62,16 +63,24 @@ it on demand. The only thing sent is a plain unauthenticated GET to
 | ⌘⇧V | open/close the search panel |
 | ↑ / ↓ , PgUp / PgDn | move the selection |
 | ↩ | paste the selected entry |
-| ⌘1…⌘9 | paste entry by number |
-| ⌘P | pin / unpin |
+| ⌘1…⌘9 | paste entry by number — unpinned entries only |
+| ⌘A, ⌘S, ⌘D… | paste a pinned entry by its letter |
+| ⌘P or ⌥P | pin / unpin |
 | ⌘⌫ | delete entry |
 | ⌘, | Settings |
 | ⎋ | close |
 
 Typing any other character filters the list immediately.
 
-In the status bar menu the first 9 entries get ⌘1…⌘9 accelerators, pinned ones
-are checked, and images show as thumbnails.
+Pinned entries form their own block at the top, separated from the rest, both
+in the panel and in the status bar menu. Each keeps the letter it was given
+until you unpin it, so a pin you have learned stays where you learned it —
+unlike ⌘1…⌘9, which follow whatever you copied last. Letters are handed out in
+the order `a s d f g h j k l ; w e r t y u i o z x c v b n m`; `p` and `q` are
+skipped because ⌘P and ⌘Q are taken.
+
+In the status bar menu the first 9 unpinned entries get ⌘1…⌘9 accelerators and
+images show as thumbnails.
 
 ## Troubleshooting
 

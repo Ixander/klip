@@ -50,10 +50,17 @@ struct HistoryView: View {
                     ForEach(Array(model.visible.enumerated()), id: \.element.id) { index, item in
                         HistoryRow(
                             item: item,
-                            index: index,
+                            shortcut: model.shortcuts[item.id],
                             selected: item.id == model.selectedID,
                             thumbnail: item.kind == .image ? store.image(for: item) : nil
                         )
+                        .overlay(alignment: .bottom) {
+                            // Hairline between the pinned block and the rest.
+                            if item.pinned, index + 1 < model.visible.count,
+                               !model.visible[index + 1].pinned {
+                                Divider().padding(.top, 6)
+                            }
+                        }
                         .id(item.id)
                         .contentShape(Rectangle())
                         .onTapGesture {
@@ -98,6 +105,7 @@ struct HistoryView: View {
             hint("↩", "paste")
             hint("⌘1…9", "quick pick")
             hint("⌘P", "pin")
+            hint("⌘A…", "pinned")
             hint("⌘⌫", "delete")
             Spacer()
             Text("\(model.visible.count)")
@@ -124,7 +132,7 @@ struct HistoryView: View {
 
 private struct HistoryRow: View {
     let item: ClipItem
-    let index: Int
+    let shortcut: String?
     let selected: Bool
     let thumbnail: NSImage?
 
@@ -161,8 +169,8 @@ private struct HistoryRow: View {
                     .font(.system(size: 10))
                     .foregroundStyle(selected ? Color.white.opacity(0.9) : Color.secondary)
             }
-            if index < 9 {
-                Text("⌘\(index + 1)")
+            if let shortcut {
+                Text(shortcut)
                     .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(selected ? Color.white.opacity(0.8) : Color.secondary)
             }

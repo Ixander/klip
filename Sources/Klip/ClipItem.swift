@@ -15,6 +15,8 @@ struct ClipItem: Identifiable, Codable, Equatable {
     /// File name inside images/ when kind == .image
     var imageFile: String?
     var pinned: Bool = false
+    /// Stable letter assigned while pinned, Maccy style. Never shifts with history.
+    var pinKey: String?
     var copiedAt: Date = Date()
     var appName: String?
     var appBundleID: String?

@@ -23,11 +23,23 @@ struct SettingsView: View {
                     LabeledContent("History size", value: "\(settings.maxItems)")
                 }
 
-                Toggle("Paste automatically (⌘V)", isOn: $settings.pasteAutomatically)
                 Toggle("Launch at login", isOn: Binding(
                     get: { settings.launchAtLogin },
                     set: { settings.launchAtLogin = $0 }
                 ))
+            }
+
+            Section("Behavior") {
+                Toggle("Paste automatically", isOn: $settings.pasteAutomatically)
+                Toggle("Paste without formatting", isOn: $settings.pasteWithoutFormatting)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Hold a modifier while selecting an item to override this once:")
+                    Text("• ⌘ — copy item.")
+                    Text("• ⌥ — copy and paste item.")
+                    Text("• ⌥⇧ — copy, clear formatting, and paste item.")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
             Section("Updates") {

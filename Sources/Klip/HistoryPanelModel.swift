@@ -13,7 +13,7 @@ final class HistoryPanelModel: ObservableObject {
     let store: HistoryStore
     let settings: AppSettings
 
-    var onConfirm: ((ClipItem) -> Void)?
+    var onConfirm: ((ClipItem, NSEvent.ModifierFlags) -> Void)?
     var onClose: (() -> Void)?
     var onOpenSettings: (() -> Void)?
 
@@ -81,7 +81,7 @@ final class HistoryPanelModel: ObservableObject {
             onClose?()
             return true
         case kVK_Return, kVK_ANSI_KeypadEnter:
-            confirmSelection()
+            confirmSelection(modifiers: event.modifierFlags)
             return true
         case kVK_DownArrow:
             move(by: 1)
@@ -139,9 +139,11 @@ final class HistoryPanelModel: ObservableObject {
         }
     }
 
-    func confirmSelection() {
+    /// `modifiers` are the keys held while picking; empty means "use the
+    /// configured default".
+    func confirmSelection(modifiers: NSEvent.ModifierFlags = []) {
         guard let item = selectedItem else { return }
-        onConfirm?(item)
+        onConfirm?(item, modifiers)
     }
 
     func deleteSelection() {

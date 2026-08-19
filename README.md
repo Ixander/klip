@@ -14,7 +14,10 @@ Swift + SwiftUI with no dependencies. Inspired by
 - Search: exact match plus fuzzy matching
 - Pin the entries you keep reaching for: each pin gets a permanent letter
   (⌘A, ⌘S, ⌘D…) that never shifts as the history changes, Maccy style
-- Auto-paste via ⌘V into the previous app (needs Accessibility)
+- Auto-paste via ⌘V into the previous app (needs Accessibility), or copy only
+  and paste yourself — see Behavior below
+- Keeps the RTF flavour of a copy, so formatting survives a round trip, and can
+  drop it on demand
 - Deduplication: copying something again moves it back to the top
 - Skips "confidential" clipboards (`org.nspasteboard.ConcealedType` and
   friends), so passwords from password managers never reach the history
@@ -37,6 +40,27 @@ Without `--install` the bundle is left at `build/Klip.app`.
 
 The icon can be regenerated with
 `swift Tools/makeicon.swift && iconutil -c icns Resources/AppIcon.iconset -o Resources/AppIcon.icns`
+
+## Behavior when picking an entry
+
+Two independent switches in Settings → Behavior:
+
+- **Paste automatically** — send ⌘V right after copying. Off means the entry
+  only lands on the clipboard and you paste it whenever you like.
+- **Paste without formatting** — drop the RTF flavour, so the target app styles
+  the text itself. This happens during the copy, so it applies even when
+  nothing is pasted.
+
+Holding a modifier while picking overrides both for that one pick:
+
+| Held | Result |
+|---|---|
+| ⌘ | copy item |
+| ⌥ | copy and paste item |
+| ⌥⇧ | copy, clear formatting, and paste item |
+
+Modifiers apply to a mouse click and to ↩. They are ignored for the ⌘1…⌘9 and
+⌘‹letter› accelerators, which already need ⌘ to be held to work at all.
 
 ## Updates
 
@@ -152,7 +176,7 @@ The certificate stays on your machine and never enters the repository. Giving
 | `HistoryPanelModel.swift` | search, filtering, selection, key handling |
 | `HistoryView.swift` | SwiftUI list interface |
 | `HotKey.swift` | global hot key via Carbon |
-| `Paster.swift` | ⌘V emulation via CGEvent, Accessibility check |
+| `Paster.swift` | pick behavior, ⌘V emulation via CGEvent, Accessibility check |
 | `UpdateChecker.swift` | GitHub Releases version check, no downloading |
 | `SettingsView.swift`, `HotKeyRecorderView.swift` | settings, shortcut recorder |
 

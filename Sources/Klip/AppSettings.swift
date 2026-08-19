@@ -22,6 +22,10 @@ final class AppSettings: ObservableObject {
     @Published var ignoredApps: [String] {
         didSet { defaults.set(ignoredApps, forKey: Keys.ignoredApps) }
     }
+    /// Drop formatting when putting a picked entry on the pasteboard.
+    @Published var pasteWithoutFormatting: Bool {
+        didSet { defaults.set(pasteWithoutFormatting, forKey: Keys.pasteWithoutFormatting) }
+    }
     /// Ask GitHub Releases about newer versions (every 48 hours).
     @Published var checkForUpdates: Bool {
         didSet { defaults.set(checkForUpdates, forKey: Keys.checkForUpdates) }
@@ -30,6 +34,7 @@ final class AppSettings: ObservableObject {
     private enum Keys {
         static let maxItems = "maxItems"
         static let pasteAutomatically = "pasteAutomatically"
+        static let pasteWithoutFormatting = "pasteWithoutFormatting"
         static let hotKeyCode = "hotKeyCode"
         static let hotKeyModifiers = "hotKeyModifiers"
         static let ignoredApps = "ignoredApps"
@@ -40,6 +45,7 @@ final class AppSettings: ObservableObject {
         defaults.register(defaults: [
             Keys.maxItems: 200,
             Keys.pasteAutomatically: true,
+            Keys.pasteWithoutFormatting: false,
             Keys.hotKeyCode: Int(kVK_ANSI_V),
             Keys.hotKeyModifiers: Int(cmdKey | shiftKey),
             Keys.ignoredApps: [] as [String],
@@ -47,6 +53,7 @@ final class AppSettings: ObservableObject {
         ])
         maxItems = defaults.integer(forKey: Keys.maxItems)
         pasteAutomatically = defaults.bool(forKey: Keys.pasteAutomatically)
+        pasteWithoutFormatting = defaults.bool(forKey: Keys.pasteWithoutFormatting)
         hotKeyCode = UInt32(defaults.integer(forKey: Keys.hotKeyCode))
         hotKeyModifiers = UInt32(defaults.integer(forKey: Keys.hotKeyModifiers))
         ignoredApps = defaults.stringArray(forKey: Keys.ignoredApps) ?? []

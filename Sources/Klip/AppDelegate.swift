@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 kind: snapshot.kind,
                 text: snapshot.text,
                 imageData: snapshot.imageData,
+                richText: snapshot.richText,
                 appName: app?.localizedName,
                 appBundleID: app?.bundleIdentifier
             )
@@ -178,7 +179,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func historyItemPicked(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? UUID,
               let item = store.items.first(where: { $0.id == id }) else { return }
-        panel.activate(item, restoreFocusTo: menuTargetApp)
+        // Modifiers only mean something for a click: a ⌘1 accelerator holds ⌘
+        // by construction, so reading it would make every shortcut copy-only.
+        let byClick = NSApp.currentEvent.map { $0.type != .keyDown } ?? false
+        let modifiers = byClick ? NSEvent.modifierFlags : []
+        panel.activate(item, restoreFocusTo: menuTargetApp, modifiers: modifiers)
     }
 
     func registerHotKey() {

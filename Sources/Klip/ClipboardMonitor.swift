@@ -7,6 +7,8 @@ final class ClipboardMonitor {
         var kind: ClipKind
         var text: String
         var imageData: Data?
+        /// RTF flavour of a text copy, kept so formatting can be preserved.
+        var richText: Data?
     }
 
     var onCopy: ((Snapshot, NSRunningApplication?) -> Void)?
@@ -67,21 +69,23 @@ final class ClipboardMonitor {
         if let urls = pb.readObjects(forClasses: [NSURL.self],
                                      options: [.urlReadingFileURLsOnly: true]) as? [URL],
            !urls.isEmpty {
-            return Snapshot(kind: .fileURL, text: urls.map(\.path).joined(separator: "\n"), imageData: nil)
+            return Snapshot(kind: .fileURL, text: urls.map(\.path).joined(separator: "\n"),
+                            imageData: nil, richText: nil)
         }
 
         if let string = pb.string(forType: .string),
            !string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return Snapshot(kind: .text, text: string, imageData: nil)
+            return Snapshot(kind: .text, text: string, imageData: nil,
+                            richText: pb.data(forType: .rtf))
         }
 
         if let png = pb.data(forType: .png) {
-            return Snapshot(kind: .image, text: "", imageData: png)
+            return Snapshot(kind: .image, text: "", imageData: png, richText: nil)
         }
         if let tiff = pb.data(forType: .tiff),
            let rep = NSBitmapImageRep(data: tiff),
            let png = rep.representation(using: .png, properties: [:]) {
-            return Snapshot(kind: .image, text: "", imageData: png)
+            return Snapshot(kind: .image, text: "", imageData: png, richText: nil)
         }
         return nil
     }

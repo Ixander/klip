@@ -2,6 +2,37 @@ import AppKit
 import ApplicationServices
 import Carbon.HIToolbox
 
+/// What picking an entry should do. Two independent axes: whether the RTF
+/// flavour is dropped on the way to the pasteboard, and whether ⌘V is sent
+/// afterwards. Stripping happens during the copy, so it applies even when
+/// nothing is pasted.
+struct PasteBehavior: Equatable, CustomStringConvertible {
+    var stripsFormatting: Bool
+    var sendsPaste: Bool
+
+    var description: String {
+        (sendsPaste ? "paste" : "copyOnly") + (stripsFormatting ? "+plain" : "")
+    }
+
+    /// Held modifiers win over the configured default, the way Maccy does it:
+    /// ⌘ copies, ⌥ copies and pastes, ⌥⇧ copies, clears formatting and pastes.
+    @MainActor
+    static func resolve(modifiers: NSEvent.ModifierFlags, settings: AppSettings) -> PasteBehavior {
+        let held = modifiers.intersection(.deviceIndependentFlagsMask)
+        if held.contains(.option) && held.contains(.shift) {
+            return PasteBehavior(stripsFormatting: true, sendsPaste: true)
+        }
+        if held.contains(.option) {
+            return PasteBehavior(stripsFormatting: false, sendsPaste: true)
+        }
+        if held.contains(.command) {
+            return PasteBehavior(stripsFormatting: settings.pasteWithoutFormatting, sendsPaste: false)
+        }
+        return PasteBehavior(stripsFormatting: settings.pasteWithoutFormatting,
+                             sendsPaste: settings.pasteAutomatically)
+    }
+}
+
 enum Paster {
     static var isTrusted: Bool { AXIsProcessTrusted() }
 

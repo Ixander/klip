@@ -14,6 +14,8 @@ struct ClipItem: Identifiable, Codable, Equatable {
     var text: String
     /// File name inside images/ when kind == .image
     var imageFile: String?
+    /// File name inside rich/ holding the RTF flavour of a text entry, if it had one.
+    var richTextFile: String?
     var pinned: Bool = false
     /// Stable letter assigned while pinned, Maccy style. Never shifts with history.
     var pinKey: String?

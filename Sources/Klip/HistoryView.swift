@@ -65,7 +65,7 @@ struct HistoryView: View {
                         .contentShape(Rectangle())
                         .onTapGesture {
                             model.selectedID = item.id
-                            model.confirmSelection()
+                            model.confirmSelection(modifiers: NSEvent.modifierFlags)
                         }
                         .contextMenu {
                             Button(item.pinned ? "Unpin" : "Pin") {

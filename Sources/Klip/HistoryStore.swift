@@ -14,10 +14,12 @@ final class HistoryStore: ObservableObject {
     }()
     private var historyURL: URL { rootURL.appendingPathComponent("history.json") }
     private var imagesURL: URL { rootURL.appendingPathComponent("images", isDirectory: true) }
+    private var richURL: URL { rootURL.appendingPathComponent("rich", isDirectory: true) }
 
     init(settings: AppSettings) {
         self.settings = settings
         try? fm.createDirectory(at: imagesURL, withIntermediateDirectories: true)
+        try? fm.createDirectory(at: richURL, withIntermediateDirectories: true)
         load()
     }
 
@@ -40,7 +42,8 @@ final class HistoryStore: ObservableObject {
 
     // MARK: - Mutations
 
-    func add(kind: ClipKind, text: String, imageData: Data?, appName: String?, appBundleID: String?) {
+    func add(kind: ClipKind, text: String, imageData: Data?, richText: Data?,
+             appName: String?, appBundleID: String?) {
         let digest: String
         if let imageData {
             digest = ClipItem.digest(of: imageData)
@@ -66,6 +69,11 @@ final class HistoryStore: ObservableObject {
             try? imageData.write(to: imagesURL.appendingPathComponent(name))
             item.imageFile = name
         }
+        if let richText {
+            let name = item.id.uuidString + ".rtf"
+            try? richText.write(to: richURL.appendingPathComponent(name))
+            item.richTextFile = name
+        }
 
         items.append(item)
         Log.write("store: added kind=\(kind.rawValue) length=\(text.count) total=\(items.count)")
@@ -75,7 +83,7 @@ final class HistoryStore: ObservableObject {
 
     func delete(_ item: ClipItem) {
         guard let idx = items.firstIndex(where: { $0.id == item.id }) else { return }
-        removeImageFile(of: items[idx])
+        removeFiles(of: items[idx])
         items.remove(at: idx)
         scheduleSave()
     }
@@ -107,7 +115,7 @@ final class HistoryStore: ObservableObject {
 
     func clear(keepPinned: Bool) {
         let removed = items.filter { keepPinned ? !$0.pinned : true }
-        removed.forEach(removeImageFile)
+        removed.forEach(removeFiles)
         items = keepPinned ? items.filter { $0.pinned } : []
         scheduleSave()
     }
@@ -120,12 +128,22 @@ final class HistoryStore: ObservableObject {
     // MARK: - Pasteboard
 
     /// Puts an item on the system pasteboard. Returns true on success.
+    ///
+    /// `stripFormatting` drops the RTF flavour of a text entry, so the target
+    /// app receives plain text and styles it itself.
     @discardableResult
-    func copyToPasteboard(_ item: ClipItem) -> Bool {
+    func copyToPasteboard(_ item: ClipItem, stripFormatting: Bool = false) -> Bool {
         let pb = NSPasteboard.general
         pb.clearContents()
         switch item.kind {
         case .text:
+            if !stripFormatting, let file = item.richTextFile,
+               let rtf = try? Data(contentsOf: richURL.appendingPathComponent(file)) {
+                pb.declareTypes([.rtf, .string], owner: nil)
+                pb.setData(rtf, forType: .rtf)
+                return pb.setString(item.text, forType: .string)
+            }
+            pb.declareTypes([.string], owner: nil)
             return pb.setString(item.text, forType: .string)
         case .fileURL:
             let urls = item.text.split(separator: "\n").map { URL(fileURLWithPath: String($0)) }
@@ -148,14 +166,18 @@ final class HistoryStore: ObservableObject {
         guard unpinned.count > limit else { return }
         let doomed = unpinned[limit...]
         let doomedIDs = Set(doomed.map(\.id))
-        doomed.forEach(removeImageFile)
+        doomed.forEach(removeFiles)
         items.removeAll { doomedIDs.contains($0.id) }
         unpinned.removeAll()
     }
 
-    private func removeImageFile(of item: ClipItem) {
-        guard let file = item.imageFile else { return }
-        try? fm.removeItem(at: imagesURL.appendingPathComponent(file))
+    private func removeFiles(of item: ClipItem) {
+        if let file = item.imageFile {
+            try? fm.removeItem(at: imagesURL.appendingPathComponent(file))
+        }
+        if let file = item.richTextFile {
+            try? fm.removeItem(at: richURL.appendingPathComponent(file))
+        }
     }
 
     private func scheduleSave() {

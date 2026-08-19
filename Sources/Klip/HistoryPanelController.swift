@@ -21,7 +21,7 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
         self.monitor = monitor
         self.model = HistoryPanelModel(store: store, settings: settings)
         super.init()
-        model.onConfirm = { [weak self] item in self?.confirm(item) }
+        model.onConfirm = { [weak self] item, modifiers in self?.confirm(item, modifiers) }
         model.onClose = { [weak self] in self?.hide(restoreFocus: true) }
         model.onOpenSettings = { [weak self] in
             self?.hide(restoreFocus: false)
@@ -78,13 +78,19 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
 
     // MARK: - Private
 
-    private func confirm(_ item: ClipItem) {
-        activate(item, restoreFocusTo: previousApp)
+    private func confirm(_ item: ClipItem, _ modifiers: NSEvent.ModifierFlags) {
+        activate(item, restoreFocusTo: previousApp, modifiers: modifiers)
     }
 
     /// Copies the item, returns focus to the target app and (optionally) sends ⌘V.
-    func activate(_ item: ClipItem, restoreFocusTo target: NSRunningApplication?) {
-        guard store.copyToPasteboard(item) else {
+    ///
+    /// `modifiers` are the keys held while picking; empty means "use the
+    /// configured default".
+    func activate(_ item: ClipItem,
+                  restoreFocusTo target: NSRunningApplication?,
+                  modifiers: NSEvent.ModifierFlags = []) {
+        let behavior = PasteBehavior.resolve(modifiers: modifiers, settings: settings)
+        guard store.copyToPasteboard(item, stripFormatting: behavior.stripsFormatting) else {
             Log.write("activate: could not write to the pasteboard")
             return
         }
@@ -95,9 +101,9 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
         if let target, target.processIdentifier != NSRunningApplication.current.processIdentifier {
             target.activate()
         }
-        Log.write("activate: kind=\(item.kind.rawValue) target=\(target?.localizedName ?? "—") autoPaste=\(settings.pasteAutomatically) trusted=\(Paster.isTrusted)")
+        Log.write("activate: kind=\(item.kind.rawValue) target=\(target?.localizedName ?? "—") behavior=\(behavior) trusted=\(Paster.isTrusted)")
 
-        guard settings.pasteAutomatically else { return }
+        guard behavior.sendsPaste else { return }
         guard Paster.isTrusted else {
             Paster.requestAccess()
             return
